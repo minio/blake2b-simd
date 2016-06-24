@@ -30,13 +30,13 @@ TEXT ·compressSSE(SB), 7, $0
     MOVQ iv+48(FP), DX        // DX: &iv
     MOVOU   0(DX), X4         // X4 = iv[0]+iv[1]      /* row3l = LOAD( &blake2b_IV[0] ); */
     MOVOU  16(DX), X5         // X5 = iv[2]+iv[3]      /* row3h = LOAD( &blake2b_IV[2] ); */
-    MOVOU  32(DX), X6         // X6 = iv[4]+iv[5]      /*                        LOAD( &blake2b_IV[4] )                      */
     MOVQ t+72(FP), SI         // SI: &t
+    MOVOU  32(DX), X6         // X6 = iv[4]+iv[5]      /*                        LOAD( &blake2b_IV[4] )                      */
     MOVOU   0(SI), X7         // X7 = t[0]+t[1]        /*                                                LOAD( &S->t[0] )    */
     PXOR       X7, X6         // X6 = X6 ^ X7          /* row4l = _mm_xor_si128(                       ,                  ); */
-    MOVOU  48(DX), X7         // X7 = iv[6]+iv[7]      /*                        LOAD( &blake2b_IV[6] )                      */
     MOVQ t+96(FP), SI         // SI: &f
-    MOVOU   0(SI), X8         // X8 = f[0]+f[0]        /* row4h = _mm_xor_si128(                         LOAD( &S->f[0] )    */
+    MOVOU  48(DX), X7         // X7 = iv[6]+iv[7]      /*                        LOAD( &blake2b_IV[6] )                      */
+    MOVOU   0(SI), X8         // X8 = f[0]+f[1]        /*                                                LOAD( &S->f[0] )    */
     PXOR       X8, X7         // X7 = X7 ^ X8          /* row4h = _mm_xor_si128(                       ,                  ); */
 
     ///////////////////////////////////////////////////////////////////////////
