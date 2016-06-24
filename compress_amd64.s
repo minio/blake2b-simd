@@ -19,6 +19,12 @@
 // func compressSSE(compressSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
 TEXT ·compressSSE(SB), 7, $0
 
+    // REGISTER USE
+    //  X0 -  X7: v0 - v15
+    //  X8 - X11: m[0] - m[7]
+    //       X12: shuffle value
+    // X13 - X15: temp registers
+
     // Load digest
     MOVQ   in+24(FP),  SI     // SI: &in
     MOVOU   0(SI), X0         // X0 = in[0]+in[1]      /* row1l = LOAD( &S->h[0] ); */
