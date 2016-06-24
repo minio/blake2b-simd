@@ -27,9 +27,17 @@ func TestCompress(t *testing.T) {
 	for i := range in {
 		in[i] = byte(i)
 	}
-	good := "2319e3789c47e2daa5fe807f61bec2a1a6537fa03f19ff32e87eecbfd64b7e0e8ccff439ac333b040f19b0c4ddd11a61e24ac1fe0f10a039806c5dcc0da3d115"
-	if good != fmt.Sprintf("%x", Sum512([]byte(in))) {
-		digest := fmt.Sprintf("%x", Sum512([]byte(in)))
-		t.Errorf("Sum512(): \nexpected %s\ngot      %s", good, digest)
+
+	hGo := New512(false)
+	hSSE := New512(true)
+
+	hGo.Write(in)
+	sumGo := fmt.Sprintf("%x", hGo.Sum(nil))
+
+	hSSE.Write(in)
+	sumSSE := fmt.Sprintf("%x", hSSE.Sum(nil))
+
+	if sumGo != sumSSE {
+		t.Errorf("expected %s\ngot      %s", sumGo, sumSSE)
 	}
 }

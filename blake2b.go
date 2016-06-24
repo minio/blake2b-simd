@@ -34,6 +34,7 @@ type digest struct {
 	isKeyed    bool            // indicates whether hash was keyed
 	size       uint8           // digest size in bytes
 	isLastNode bool            // indicates processing of the last node in tree hashing
+	sseOptimized bool		   // temp bool to indicate use of SSE (during dev only)
 }
 
 // Initialization values.
@@ -162,9 +163,12 @@ func (d *digest) initialize(c *Config) {
 }
 
 // New512 returns a new hash.Hash computing the BLAKE2b 64-byte checksum.
-func New512() hash.Hash {
+func New512(enableSSE bool) hash.Hash {
 	d := new(digest)
 	d.initialize(defaultConfig)
+	if enableSSE {
+		d.EnableSSE()
+	}
 	return d
 }
 
@@ -206,6 +210,9 @@ func (d *digest) Size() int { return int(d.size) }
 // BlockSize returns the algorithm block size in bytes.
 func (d *digest) BlockSize() int { return BlockSize }
 
+// Enable SSE
+func (d *digest) EnableSSE() { d.sseOptimized = true }
+
 func (d *digest) Write(p []byte) (nn int, err error) {
 	nn = len(p)
 	left := BlockSize - d.nx
@@ -213,7 +220,11 @@ func (d *digest) Write(p []byte) (nn int, err error) {
 		// Process buffer.
 		copy(d.x[d.nx:], p[:left])
 		p = p[left:]
-		blocks(d, d.x[:])
+		if d.sseOptimized {
+			compress(d, d.x[:])
+		} else {
+			blocks(d, d.x[:])
+		}
 		d.nx = 0
 	}
 	// Process full blocks except for the last one.
@@ -222,7 +233,11 @@ func (d *digest) Write(p []byte) (nn int, err error) {
 		if n == len(p) {
 			n -= BlockSize
 		}
-		blocks(d, p[:n])
+		if d.sseOptimized {
+			compress(d, p[:n])
+		} else {
+			blocks(d, p[:n])
+		}
 		p = p[n:]
 	}
 	// Fill buffer.
@@ -262,7 +277,11 @@ func (d *digest) checkSum() [Size]byte {
 		d.f[1] = 0xffffffffffffffff
 	}
 	// Compress last block.
-	blocks(d, d.x[:])
+	if d.sseOptimized {
+		compress(d, d.x[:])
+	} else {
+		blocks(d, d.x[:])
+	}
 
 	var out [Size]byte
 	j := 0
