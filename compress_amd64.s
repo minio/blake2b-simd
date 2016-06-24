@@ -16,6 +16,33 @@
 // limitations under the License.
 //
 
+//
+// Based on SSE implementation from https://github.com/BLAKE2/BLAKE2/blob/master/sse/blake2b.c
+//
+// Use github.com/fwessels/asm2plan9s on this file to assemble instructions to their Plan9 equivalent
+//
+// Assembly code below essentially follows the ROUND macro (see blake2b-round.h) which is defined as:
+//   #define ROUND(r) \
+//     LOAD_MSG_ ##r ##_1(b0, b1); \
+//     G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1); \
+//     LOAD_MSG_ ##r ##_2(b0, b1); \
+//     G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1); \
+//     DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h); \
+//     LOAD_MSG_ ##r ##_3(b0, b1); \
+//     G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1); \
+//     LOAD_MSG_ ##r ##_4(b0, b1); \
+//     G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1); \
+//     UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
+//
+// as well as the go equivalent in https://github.com/dchest/blake2b/blob/master/block.go
+//
+// As in the macro, G1/G2 in the 1st and 2nd half are identical (so literal copy of assembly)
+//
+// Rounds are also the same, except for the loading of the message (and rounds 1 & 11 and
+// rounds 2 & 12 are identical)
+//
+
+
 // func compressSSE(compressSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
 TEXT ·compressSSE(SB), 7, $0
 
