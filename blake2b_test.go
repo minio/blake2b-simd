@@ -33,8 +33,6 @@ func TestCompress(t *testing.T) {
 
 	hGo.Write(in)
 	sumGo := fmt.Sprintf("%x", hGo.Sum(nil))
-	// Digest for testing generated with modified codahale/blake2 with ROUND macro that stops after DIAGONALIZE
-	sumGo = "2306b43fd384cba9820ad5a79c6a0f19775f205e9e13f5956b8c271cf6d5b165de31323244522c59eca5c96d943d76df4b1770b86e26dae7839042fa1875bc60"
 
 	hSSE.Write(in)
 	sumSSE := fmt.Sprintf("%x", hSSE.Sum(nil))
