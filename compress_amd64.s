@@ -131,6 +131,21 @@ TEXT ·compressSSE(SB), 7, $0
     BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
     BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
 
+    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
+    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
+    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
+    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
+    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
+    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
+    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
+    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
+    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
+    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+
     // Reload digest
     MOVQ   in+24(FP),  SI     // SI: &in
     MOVOU   0(SI), X12        // X12 = in[0]+in[1]      /* row1l = LOAD( &S->h[0] ); */
