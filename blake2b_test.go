@@ -21,6 +21,8 @@ import (
 	"testing"
 )
 
+// TestSum - tests and validates golden set of values again
+// pre-defined set of inputs and matches blake2b output.
 func TestSum(t *testing.T) {
 	buf := make([]byte, len(golden))
 	for i := range buf {
@@ -73,44 +75,6 @@ func TestKeyedSum(t *testing.T) {
 			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum)
 		}
 
-	}
-}
-
-var bench = New512()
-var buf = make([]byte, 8<<10)
-
-func BenchmarkWrite1K(b *testing.B) {
-	b.SetBytes(1024)
-	for i := 0; i < b.N; i++ {
-		bench.Write(buf[:1024])
-	}
-}
-
-func BenchmarkWrite8K(b *testing.B) {
-	b.SetBytes(int64(len(buf)))
-	for i := 0; i < b.N; i++ {
-		bench.Write(buf)
-	}
-}
-
-func BenchmarkHash64(b *testing.B) {
-	b.SetBytes(64)
-	for i := 0; i < b.N; i++ {
-		Sum512(buf[:64])
-	}
-}
-
-func BenchmarkHash128(b *testing.B) {
-	b.SetBytes(128)
-	for i := 0; i < b.N; i++ {
-		Sum512(buf[:128])
-	}
-}
-
-func BenchmarkHash1K(b *testing.B) {
-	b.SetBytes(1024)
-	for i := 0; i < b.N; i++ {
-		Sum512(buf[:1024])
 	}
 }
 
@@ -631,4 +595,56 @@ var goldenKeyed = []string{
 	"a6213743568e3b3158b9184301f3690847554c68457cb40fc9a4b8cfd8d4a118c301a07737aeda0f929c68913c5f51c80394f53bff1c3e83b2e40ca97eba9e15",
 	"d444bfa2362a96df213d070e33fa841f51334e4e76866b8139e8af3bb3398be2dfaddcbc56b9146de9f68118dc5829e74b0c28d7711907b121f9161cb92b69a9",
 	"142709d62e28fcccd0af97fad0f8465b971e82201dc51070faa0372aa43e92484be1c1e73ba10906d5d1853db6a4106e0a7bf9800d373d6dee2d46d62ef2a461",
+}
+
+// Benchmark blake2b implementation.
+var bench = New512()
+var buf = make([]byte, 128*1024)
+
+// Benchmark writes of 64 bytes.
+func BenchmarkHash64(b *testing.B) {
+	b.SetBytes(64)
+	for i := 0; i < b.N; i++ {
+		Sum512(buf[:64])
+	}
+}
+
+// Benchmark writes of 128 bytes.
+func BenchmarkHash128(b *testing.B) {
+	b.SetBytes(128)
+	for i := 0; i < b.N; i++ {
+		Sum512(buf[:128])
+	}
+}
+
+// Benchmark writes of 1KiB bytes.
+func BenchmarkWrite1K(b *testing.B) {
+	b.SetBytes(1024)
+	for i := 0; i < b.N; i++ {
+		bench.Write(buf[:1024])
+	}
+}
+
+// Benchmark writes of 8KiB bytes.
+func BenchmarkWrite8K(b *testing.B) {
+	b.SetBytes(int64(len(buf)))
+	for i := 0; i < b.N; i++ {
+		bench.Write(buf[:8192])
+	}
+}
+
+// Benchmark writes of 32KiB bytes.
+func BenchmarkWrite32K(b *testing.B) {
+	b.SetBytes(int64(len(buf)))
+	for i := 0; i < b.N; i++ {
+		bench.Write(buf[:32*1024])
+	}
+}
+
+// Benchmark writes of 128KiB bytes.
+func BenchmarkWrite128K(b *testing.B) {
+	b.SetBytes(int64(len(buf)))
+	for i := 0; i < b.N; i++ {
+		bench.Write(buf)
+	}
 }

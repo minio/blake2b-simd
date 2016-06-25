@@ -42,9 +42,8 @@
 // rounds 2 & 12 are identical)
 //
 
-
-// func compressSSE(compressSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
-TEXT ·compressSSE(SB), 7, $0
+// func blockSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
+TEXT ·blockSSE(SB), 7, $0
 
     // REGISTER USE
     //  X0 -  X7: v0 - v15
@@ -1888,3 +1887,4 @@ TEXT ·compressSSE(SB), 7, $0
     MOVOU  X3, 48(DX)         // out[6]+out[7] = X3
 
     RET
+
