@@ -33,6 +33,8 @@ func TestCompress(t *testing.T) {
 
 	hGo.Write(in)
 	sumGo := fmt.Sprintf("%x", hGo.Sum(nil))
+	// Digest for testing obtained from modified codahale/blake2
+    sumGo = "1f911baeebab14535c9e20b7d7edbe9fab64b6cc82be0cf0561fd3427dd100cc3110dd47fe789941e583313d773c7859cb6266c886cf0f8e98da11a4926c06c3"
 
 	hSSE.Write(in)
 	sumSSE := fmt.Sprintf("%x", hSSE.Sum(nil))
