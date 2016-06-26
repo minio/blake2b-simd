@@ -230,6 +230,10 @@ TEXT ·compressSSE(SB), 7, $0
     MOVOU  96(DX), X15        // X15 = m[12]+m[13]
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xc5   // VPUNPCKLQDQ  XMM8, XMM12, XMM13  /* m[14],  m[4] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xcf   // VPUNPCKHQDQ  XMM9, XMM14, XMM15  /*  m[9], m[13] */
+    MOVOU  80(DX), X13        // X13 = m[10]+m[11]
+    MOVOU  48(DX), X15        // X15 =  m[6]+ m[7]
+    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
 
     // Load shuffle value
     MOVQ   shffle+120(FP), SI // SI: &shuffle
@@ -250,6 +254,28 @@ TEXT ·compressSSE(SB), 7, $0
     BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
     BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
     BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+
+    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
+    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
+    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
+    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
+    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
+    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
+    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
+    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
+    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
+    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
+    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
+    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
+    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
+    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
+    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
+    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
+    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   1 1
