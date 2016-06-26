@@ -299,8 +299,7 @@ TEXT ·compressSSE(SB), 7, $0
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  32(DX), X13        // X13 =  m[4]+ m[5]
     MOVOU  80(DX), X14        // X14 = m[10]+m[11]
-    BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xc4   // VPUNPCKHQDQ  XMM8, XMM12, XMM12  /*  m[1], ___  */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x39; BYTE $0x6c; BYTE $0xc4   // VPUNPCKLQDQ  XMM8,  XMM8, XMM12  /*   ___, m[0] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xc4; BYTE $0x08 // VPALIGNR     XMM8, XMM12, XMM12, 0x8  /*  m[1],  m[0] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xcd   // VPUNPCKHQDQ  XMM9, XMM14, XMM13  /* m[11], m[5] */
     MOVOU  16(DX), X12        // X12 =  m[2]+ m[3]
     MOVOU  48(DX), X13        // X13 =  m[6]+ m[7]
@@ -744,8 +743,7 @@ TEXT ·compressSSE(SB), 7, $0
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  32(DX), X13        // X13 =  m[4]+ m[5]
     MOVOU  80(DX), X14        // X14 = m[10]+m[11]
-    BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xc4   // VPUNPCKHQDQ  XMM8, XMM12, XMM12  /*  m[1], ___  */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x39; BYTE $0x6c; BYTE $0xc4   // VPUNPCKLQDQ  XMM8,  XMM8, XMM12  /*   ___, m[0] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xc4; BYTE $0x08 // VPALIGNR     XMM8, XMM12, XMM12, 0x8  /*  m[1],  m[0] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xcd   // VPUNPCKHQDQ  XMM9, XMM14, XMM13  /* m[11], m[5] */
     MOVOU  16(DX), X12        // X12 =  m[2]+ m[3]
     MOVOU  48(DX), X13        // X13 =  m[6]+ m[7]
