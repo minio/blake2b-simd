@@ -42,8 +42,8 @@
 // rounds 2 & 12 are identical)
 //
 
-// func blockSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
-TEXT ·blockSSE(SB), 7, $0
+// func blockAVX(p []uint8, in, iv, t, f, shffle, out []uint64)
+TEXT ·blockAVX(SB), 7, $0
 
     // REGISTER USE
     //  X0 -  X7: v0 - v15
