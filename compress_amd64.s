@@ -114,6 +114,12 @@
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe \ // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
     BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
 
+#define LOAD_SHUFFLE \
+    \ // Load shuffle value
+    MOVQ   shffle+120(FP), SI \ // SI: &shuffle
+    MOVOU  0(SI), X12           // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+
+
 // func blockSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
 TEXT ·blockSSE(SB), 7, $0
 
@@ -160,9 +166,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /* m[1], m[3] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[5], m[7] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -182,9 +186,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /*  m[9],m[11] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[13],m[15] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -210,9 +212,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -234,9 +234,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xd4   // VPUNPCKLQDQ XMM10, XMM14, XMM12  /* m[12], m[2] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM13, XMM12  /*  m[7], m[3] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -264,9 +262,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___, m[13] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[2],   ___ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -290,9 +286,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xd5   // VPUNPCKLQDQ XMM10, XMM15, XMM13  /* m[14], m[6] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM14, XMM12, 0x8  /*  m[1],  m[4] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -319,9 +313,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xd4   // VPUNPCKHQDQ XMM10, XMM13, XMM12  /*  m[9],  m[1] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xde   // VPUNPCKLQDQ XMM11, XMM15, XMM14  /* m[12], m[14] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -346,9 +338,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /*  m[6], m[10] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xdf   // VPUNPCKLQDQ XMM11, XMM12, XMM15  /*  m[0],  m[8] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -377,9 +367,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM15, XMM15  /*   ___, m[15] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[4],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -405,9 +393,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___, m[13] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[8],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -433,9 +419,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xd4   // VPUNPCKLQDQ XMM10, XMM14, XMM12  /* m[12], m[10] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdd   // VPUNPCKHQDQ XMM11, XMM12, XMM13  /* m[11],  m[3] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -458,9 +442,8 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM14, XMM13  /* m[13],  m[5] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM12, XMM12  /*   ___,  m[9] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM15, XMM11  /* m[14],  ____ */
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -486,9 +469,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ XMM10, XMM13, XMM15  /*  m[5], m[15] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xde; BYTE $0x08// VPALIGNR    XMM11, XMM12, XMM14, 0x8  /* m[13], m[10] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -510,9 +491,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM15, XMM15  /*   ___, m[11] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM14, XMM11  /*  m[2],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -540,9 +519,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd6; BYTE $0x08// VPALIGNR    XMM10, XMM15, XMM14, 0x8  /* m[11], m[14] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdd   // VPUNPCKHQDQ XMM11, XMM12, XMM13  /*  m[1],  m[9] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -565,9 +542,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xd5   // VPUNPCKLQDQ XMM10, XMM12, XMM13  /*  m[0],  m[4] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdf   // VPUNPCKLQDQ XMM11, XMM14, XMM15  /*  m[6], m[10] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -593,9 +568,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xd6   // VPUNPCKHQDQ XMM10, XMM15, XMM14  /* m[15],  m[9] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdd; BYTE $0x08// VPALIGNR    XMM11, XMM14, XMM13, 0x8  /*  m[3],  m[8] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -620,9 +593,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM12, XMM12  /*   ___,  m[5] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM12, XMM11  /*  m[4],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -649,9 +620,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___,  m[5] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[6],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -673,9 +642,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd5; BYTE $0x08// VPALIGNR    XMM10, XMM15, XMM13, 0x8  /* m[11], m[14] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdc   // VPUNPCKLQDQ XMM11, XMM14, XMM12  /* m[12],  m[0] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -699,9 +666,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /* m[1], m[3] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[5], m[7] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -721,9 +686,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /*  m[9],m[11] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[13],m[15] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -749,9 +712,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
@@ -773,9 +734,7 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xd4   // VPUNPCKLQDQ XMM10, XMM14, XMM12  /* m[12], m[2] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM13, XMM12  /*  m[7], m[3] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
     G1
     G2
