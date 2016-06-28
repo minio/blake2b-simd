@@ -21,33 +21,12 @@ import (
 	"testing"
 )
 
-func TestCompress(t *testing.T) {
-
-	in := make([]byte, 128)
-	for i := range in {
-		in[i] = byte(i)
-	}
-
-	hGo := New512(false)
-	hSSE := New512(true)
-
-	hGo.Write(in)
-	sumGo := fmt.Sprintf("%x", hGo.Sum(nil))
-
-	hSSE.Write(in)
-	sumSSE := fmt.Sprintf("%x", hSSE.Sum(nil))
-
-	if sumGo != sumSSE {
-		t.Errorf("expected %s\ngot      %s", sumGo, sumSSE)
-	}
-}
-
 func TestSum(t *testing.T) {
 	buf := make([]byte, len(golden))
 	for i := range buf {
 		buf[i] = byte(i)
 	}
-	h := New512(true)
+	h := New512()
 	for i, v := range golden {
 		if v != fmt.Sprintf("%x", Sum512(buf[:i])) {
 			t.Errorf("%d: Sum512(): \nexpected %s\ngot      %x", i, v, Sum512(buf[:i]))
