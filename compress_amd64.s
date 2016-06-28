@@ -120,9 +120,8 @@
     MOVOU  0(SI), X12           // X12 = 03040506 07000102 0b0c0d0e 0f08090a
 
 
-// func blockSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
-TEXT ·blockSSE(SB), 7, $0
-
+// func blockAVX(p []uint8, in, iv, t, f, shffle, out []uint64)
+TEXT ·blockAVX(SB), 7, $0
     // REGISTER USE
     //  X0 -  X7: v0 - v15
     //  X8 - X11: m[0] - m[7]

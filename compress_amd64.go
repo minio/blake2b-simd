@@ -20,9 +20,9 @@
 package blake2b
 
 //go:noescape
-func blockSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
+func blockAVX(p []uint8, in, iv, t, f, shffle, out []uint64)
 
-func compressSSE(d *digest, p []uint8) {
+func compressAVX(d *digest, p []uint8) {
 	h0, h1, h2, h3, h4, h5, h6, h7 := d.h[0], d.h[1], d.h[2], d.h[3], d.h[4], d.h[5], d.h[6], d.h[7]
 
 	in := make([]uint64, 8, 8)
@@ -42,7 +42,7 @@ func compressSSE(d *digest, p []uint8) {
 
 		in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7] = h0, h1, h2, h3, h4, h5, h6, h7
 
-		blockSSE(p, in, iv[:], d.t[:], d.f[:], shffle, out)
+		blockAVX(p, in, iv[:], d.t[:], d.f[:], shffle, out)
 
 		h0, h1, h2, h3, h4, h5, h6, h7 = out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]
 
@@ -53,9 +53,10 @@ func compressSSE(d *digest, p []uint8) {
 }
 
 func compress(d *digest, p []uint8) {
+	// Verifies if AVX is available, use optimized code path.
 	if avx {
-		compressSSE(d, p)
+		compressAVX(d, p)
 		return
-	}
+	} // else { fallback to generic approach.
 	compressGeneric(d, p)
 }
