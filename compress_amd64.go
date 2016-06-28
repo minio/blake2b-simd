@@ -2,7 +2,7 @@
 //+build !appengine
 
 /*
- * Copyright 2016 Frank Wessels <fwessels@xs4all.nl>
+ * Minio Cloud Storage, (C) 2016 Minio, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
