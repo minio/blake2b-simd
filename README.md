@@ -1,7 +1,7 @@
-BLAKE2b-SSE
-===========
+BLAKE2b-SIMD
+============
 
-Pure Go implementation of BLAKE2b using SSE optimizations.
+Pure Go implementation of BLAKE2b using SIMD optimizations.
 
 Introduction
 ------------
@@ -13,4 +13,8 @@ It gives roughly a 3x performance improvement over the non-optimized go version.
 Benchmarks
 ----------
 
-<TO BE DONE>
+| Dura          |  1 GB |
+| ------------- |:-----:|
+| blake2b-SIMD  | 1.59s |
+| blake2b       | 4.66s |
+
