@@ -18,12 +18,20 @@
 package blake2b
 
 func cpuid(op uint32) (eax, ebx, ecx, edx uint32)
+func xgetbv(index uint32) (eax, edx uint32)
 
 // True when SIMD instructions are available.
-var sse = haveSSE()
+var avx = haveAVX()
 
 // haveSSE returns true if we have streaming SIMD instructions.
-func haveSSE() bool {
-	_, _, _, d := cpuid(1)
-	return (d & (1 << 25)) != 0
+func haveAVX() bool {
+	_, _, c, _ := cpuid(1)
+
+	// Check XGETBV, OXSAVE and AVX bits
+	if c&(1<<26) != 0 && c&(1<<27) != 0 && c&(1<<28) != 0 {
+		// Check for OS support
+		eax, _ := xgetbv(0)
+		return (eax & 0x6) == 0x6
+	}
+	return false
 }
