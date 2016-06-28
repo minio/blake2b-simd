@@ -42,6 +42,84 @@
 // rounds 2 & 12 are identical)
 //
 
+#define G1 \
+    \ // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0 \ // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9 \ // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
+    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2             \ // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
+    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb             \ // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
+    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0             \ // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
+    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9             \ // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
+    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1 \ // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
+    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1 \ // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
+    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6             \ // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
+    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef             \ // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
+    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4             \ // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
+    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd             \ // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
+    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4 \ // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
+    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+
+#define G2 \
+    \ // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2 \ // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb \ // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
+    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2             \ // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
+    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb             \ // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
+    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0             \ // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
+    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9             \ // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
+    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39 \ // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
+    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39 \ // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
+    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39 \ // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
+    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39 \ // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
+    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6             \ // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
+    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef             \ // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
+    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4             \ // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
+    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd             \ // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
+    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa             \ // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
+    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f \ // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7 \ // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
+    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb             \ // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
+    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f \ // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
+
+#define DIAGONALIZE \
+    \ // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
+    MOVOU  X6, X13 \                                                                                 /*  t0 = row4l;\                                                           */
+    MOVOU  X2, X14 \                                                                                 /*  t1 = row2l;\                                                           */
+    MOVOU  X4, X6  \                                                                                 /*  row4l = row3l;\                                                        */
+    MOVOU  X5, X4 \                                                                                  /*  row3l = row3h;\                                                        */
+    MOVOU  X6, X5 \                                                                                  /*  row3h = row4l;\                                                        */
+    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd \ // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7 \ // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
+    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff             \ // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff \ // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
+    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb             \ // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7 \ // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
+    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe \ // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+
+#define UNDIAGONALIZE \
+    \ // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
+    MOVOU  X4, X13 \                                                                                 /* t0 = row3l;\                                                            */
+    MOVOU  X5, X4 \                                                                                  /* row3l = row3h;\                                                         */
+    MOVOU X13, X5 \                                                                                  /* row3h = t0;\                                                            */
+    MOVOU  X2, X13 \                                                                                 /* t0 = row2l;\                                                            */
+    MOVOU  X6, X14 \                                                                                 /* t1 = row4l;\                                                            */
+    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa             \ // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7 \ // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
+    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb             \ // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf \ // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
+    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff             \ // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7 \ // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
+    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe \ // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
+    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+
+#define LOAD_SHUFFLE \
+    \ // Load shuffle value
+    MOVQ   shffle+120(FP), SI \ // SI: &shuffle
+    MOVOU  0(SI), X12           // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+
+
 // func blockSSE(p []uint8, in, iv, t, f, shffle, out []uint64)
 TEXT ·blockSSE(SB), 7, $0
 
@@ -88,62 +166,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /* m[1], m[3] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[5], m[7] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -158,62 +186,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /*  m[9],m[11] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[13],m[15] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 +=  m[8], v1 += m[10] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[12], v3 += m[14] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 +=  m[9], v1 += m[11] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[13], v3 += m[15] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   2
@@ -234,62 +212,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -306,62 +234,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xd4   // VPUNPCKLQDQ XMM10, XMM14, XMM12  /* m[12], m[2] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM13, XMM12  /*  m[7], m[3] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   3
@@ -384,62 +262,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___, m[13] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[2],   ___ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -458,62 +286,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xd5   // VPUNPCKLQDQ XMM10, XMM15, XMM13  /* m[14], m[6] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM14, XMM12, 0x8  /*  m[1],  m[4] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   4
@@ -535,62 +313,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xd4   // VPUNPCKHQDQ XMM10, XMM13, XMM12  /*  m[9],  m[1] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xde   // VPUNPCKLQDQ XMM11, XMM15, XMM14  /* m[12], m[14] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -610,62 +338,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /*  m[6], m[10] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xdf   // VPUNPCKLQDQ XMM11, XMM12, XMM15  /*  m[0],  m[8] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   5
@@ -689,62 +367,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM15, XMM15  /*   ___, m[15] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[4],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -765,62 +393,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___, m[13] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[8],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   6
@@ -841,62 +419,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xd4   // VPUNPCKLQDQ XMM10, XMM14, XMM12  /* m[12], m[10] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdd   // VPUNPCKHQDQ XMM11, XMM12, XMM13  /* m[11],  m[3] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -914,62 +442,13 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM14, XMM13  /* m[13],  m[5] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM12, XMM12  /*   ___,  m[9] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM15, XMM11  /* m[14],  ____ */
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    LOAD_SHUFFLE
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
+    G1
+    G2
 
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   7
@@ -990,62 +469,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ XMM10, XMM13, XMM15  /*  m[5], m[15] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xde; BYTE $0x08// VPALIGNR    XMM11, XMM12, XMM14, 0x8  /* m[13], m[10] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -1062,62 +491,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM15, XMM15  /*   ___, m[11] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM14, XMM11  /*  m[2],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   8
@@ -1140,62 +519,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd6; BYTE $0x08// VPALIGNR    XMM10, XMM15, XMM14, 0x8  /* m[11], m[14] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdd   // VPUNPCKHQDQ XMM11, XMM12, XMM13  /*  m[1],  m[9] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -1213,62 +542,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xd5   // VPUNPCKLQDQ XMM10, XMM12, XMM13  /*  m[0],  m[4] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdf   // VPUNPCKLQDQ XMM11, XMM14, XMM15  /*  m[6], m[10] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   9
@@ -1289,62 +568,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xd6   // VPUNPCKHQDQ XMM10, XMM15, XMM14  /* m[15],  m[9] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdd; BYTE $0x08// VPALIGNR    XMM11, XMM14, XMM13, 0x8  /*  m[3],  m[8] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -1364,62 +593,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM12, XMM12  /*   ___,  m[5] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM12, XMM11  /*  m[4],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   1 0
@@ -1441,62 +620,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___,  m[5] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[6],  ____ */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -1513,62 +642,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd5; BYTE $0x08// VPALIGNR    XMM10, XMM15, XMM13, 0x8  /* m[11], m[14] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdc   // VPUNPCKLQDQ XMM11, XMM14, XMM12  /* m[12],  m[0] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   1 1
@@ -1587,62 +666,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /* m[1], m[3] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[5], m[7] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -1657,62 +686,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xd5   // VPUNPCKHQDQ XMM10, XMM12, XMM13  /*  m[9],m[11] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM14, XMM15  /* m[13],m[15] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 +=  m[8], v1 += m[10] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[12], v3 += m[14] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 +=  m[9], v1 += m[11] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[13], v3 += m[15] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     ///////////////////////////////////////////////////////////////////////////
     // R O U N D   1 2
@@ -1733,62 +712,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
     BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X6, X13                                                                                   /*  t0 = row4l;\                                                           */
-    MOVOU  X2, X14                                                                                   /*  t1 = row2l;\                                                           */
-    MOVOU  X4, X6                                                                                    /*  row4l = row3l;\                                                        */
-    MOVOU  X5, X4                                                                                    /*  row3l = row3h;\                                                        */
-    MOVOU  X6, X5                                                                                    /*  row3h = row4l;\                                                        */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xfd   // VPUNPCKLQDQ XMM15, XMM13, XMM13  /*                                    _mm_unpacklo_epi64(t0, t0)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM7, XMM15  /*  row4l = _mm_unpackhi_epi64(row4h,                           ); \       */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                 _mm_unpacklo_epi64(row4h, row4h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7, XMM13, XMM15  /*  row4h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                    _mm_unpacklo_epi64(row2h, row2h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM2, XMM15  /*  row2l = _mm_unpackhi_epi64(row2l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3,  XMM3, XMM15  /*  row2h = _mm_unpackhi_epi64(row2h,                           )          */
+    DIAGONALIZE
 
     // LOAD_MSG_ ##r ##_3(b0, b1);
     // LOAD_MSG_ ##r ##_4(b0, b1);
@@ -1805,62 +734,12 @@ TEXT ·blockSSE(SB), 7, $0
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xd4   // VPUNPCKLQDQ XMM10, XMM14, XMM12  /* m[12], m[2] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xdc   // VPUNPCKHQDQ XMM11, XMM13, XMM12  /*  m[7], m[3] */
 
-    // Load shuffle value
-    MOVQ   shffle+120(FP), SI // SI: &shuffle
-    MOVOU  0(SI), X12         // X12 = 03040506 07000102 0b0c0d0e 0f08090a
+    LOAD_SHUFFLE
 
-    // G1(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc0   // VPADDQ  XMM0,XMM0,XMM8   /* v0 += m[0], v1 += m[2] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xc9   // VPADDQ  XMM1,XMM1,XMM9   /* v2 += m[4], v3 += m[6] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xf6; BYTE $0xb1   // VPSHUFD XMM6,XMM6,0xb1   /* v12 = v12<<(64-32) | v12>>32, v13 = v13<<(64-32) | v13>>32 */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0x70; BYTE $0xff; BYTE $0xb1   // VPSHUFD XMM7,XMM7,0xb1   /* v14 = v14<<(64-32) | v14>>32, v15 = v15<<(64-32) | v15>>32 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13  */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x69; BYTE $0x00; BYTE $0xd4   // VPSHUFB XMM2,XMM2,XMM12  /* v4 = v4<<(64-24) | v4>>24, v5 = v5<<(64-24) | v5>>24 */
-    BYTE $0xc4; BYTE $0xc2; BYTE $0x61; BYTE $0x00; BYTE $0xdc   // VPSHUFB XMM3,XMM3,XMM12  /* v6 = v6<<(64-24) | v6>>24, v7 = v7<<(64-24) | v7>>24 */
+    G1
+    G2
 
-    // G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1);
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x79; BYTE $0xd4; BYTE $0xc2   // VPADDQ  XMM0,XMM0,XMM10  /* v0 += m[1], v1 += m[3] */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x71; BYTE $0xd4; BYTE $0xcb   // VPADDQ  XMM1,XMM1,XMM11  /* v2 += m[5], v3 += m[7] */
-    BYTE $0xc5; BYTE $0xf9; BYTE $0xd4; BYTE $0xc2               // VPADDQ  XMM0,XMM0,XMM2   /* v0 += v4, v1 += v5 */
-    BYTE $0xc5; BYTE $0xf1; BYTE $0xd4; BYTE $0xcb               // VPADDQ  XMM1,XMM1,XMM3   /* v2 += v6, v3 += v7 */
-    BYTE $0xc5; BYTE $0xc9; BYTE $0xef; BYTE $0xf0               // VPXOR   XMM6,XMM6,XMM0   /* v12 ^= v0, v13 ^= v1 */
-    BYTE $0xc5; BYTE $0xc1; BYTE $0xef; BYTE $0xf9               // VPXOR   XMM7,XMM7,XMM1   /* v14 ^= v2, v15 ^= v3 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFLW XMM6,XMM6,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xf6; BYTE $0x39   // VPSHUFHW XMM6,XMM6,0x39  /* v12 = v12<<(64-16) | v12>>16, v13 = v13<<(64-16) | v13>>16 */
-    BYTE $0xc5; BYTE $0xfb; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFLW XMM7,XMM7,0x39  /* combined with next ... */
-    BYTE $0xc5; BYTE $0xfa; BYTE $0x70; BYTE $0xff; BYTE $0x39   // VPSHUFHW XMM7,XMM7,0x39  /* v14 = v14<<(64-16) | v14>>16, v15 = v15<<(64-16) | v15>>16 */
-    BYTE $0xc5; BYTE $0xd9; BYTE $0xd4; BYTE $0xe6               // VPADDQ  XMM4,XMM4,XMM6   /* v8 += v12, v9 += v13 */
-    BYTE $0xc5; BYTE $0xd1; BYTE $0xd4; BYTE $0xef               // VPADDQ  XMM5,XMM5,XMM7   /* v10 += v14, v11 += v15 */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0xef; BYTE $0xd4               // VPXOR   XMM2,XMM2,XMM4   /* v4 ^= v8, v5 ^= v9 */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0xef; BYTE $0xdd               // VPXOR   XMM3,XMM3,XMM5   /* v6 ^= v10, v7 ^= v11 */
-    BYTE $0xc5; BYTE $0x69; BYTE $0xd4; BYTE $0xfa               // VPADDQ  XMM15,XMM2,XMM2  /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe9; BYTE $0x73; BYTE $0xd2; BYTE $0x3f   // VPSRLQ  XMM2,XMM2,0x3f   /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x69; BYTE $0xef; BYTE $0xd7   // VPXOR   XMM2,XMM2,XMM15  /* ORed together: v4 = v4<<(64-63) | v4>>63, v5 = v5<<(64-63) | v5>>63 */
-    BYTE $0xc5; BYTE $0x61; BYTE $0xd4; BYTE $0xfb               // VPADDQ XMM15,XMM3,XMM3   /* temp reg = reg*2   */
-    BYTE $0xc5; BYTE $0xe1; BYTE $0x73; BYTE $0xd3; BYTE $0x3f   // VPSRLQ XMM3,XMM3,0x3f    /*      reg = reg>>63 */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0xef; BYTE $0xdf   // VPXOR  XMM3,XMM3,XMM15   /* ORed together: v6 = v6<<(64-63) | v6>>63, v7 = v7<<(64-63) | v7>>63 */
-
-    // UNDIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h);
-    MOVOU  X4, X13                                                                                   /* t0 = row3l;\                                                            */
-    MOVOU  X5, X4                                                                                    /* row3l = row3h;\                                                         */
-    MOVOU X13, X5                                                                                    /* row3h = t0;\                                                            */
-    MOVOU  X2, X13                                                                                   /* t0 = row2l;\                                                            */
-    MOVOU  X6, X14                                                                                   /* t1 = row4l;\                                                            */
-    BYTE $0xc5; BYTE $0x69; BYTE $0x6c; BYTE $0xfa               // VPUNPCKLQDQ XMM15,  XMM2,  XMM2  /*                                    _mm_unpacklo_epi64(row2l, row2l)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x61; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ  XMM2,  XMM3, XMM15  /*  row2l = _mm_unpackhi_epi64(row2h,                                 ); \ */
-    BYTE $0xc5; BYTE $0x61; BYTE $0x6c; BYTE $0xfb               // VPUNPCKLQDQ XMM15,  XMM3,  XMM3  /*                                 _mm_unpacklo_epi64(row2h, row2h)        */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x11; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ  XMM3, XMM13, XMM15  /*  row2h = _mm_unpackhi_epi64(t0,                                 ); \    */
-    BYTE $0xc5; BYTE $0x41; BYTE $0x6c; BYTE $0xff               // VPUNPCKLQDQ XMM15,  XMM7,  XMM7  /*                                    _mm_unpacklo_epi64(row4h, row4h)     */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x49; BYTE $0x6d; BYTE $0xf7   // VPUNPCKHQDQ  XMM6,  XMM6, XMM15  /*  row4l = _mm_unpackhi_epi64(row4l,                                 ); \ */
-    BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xfe   // VPUNPCKLQDQ XMM15, XMM14, XMM14  /*                                    _mm_unpacklo_epi64(t1, t1)           */
-    BYTE $0xc4; BYTE $0xc1; BYTE $0x41; BYTE $0x6d; BYTE $0xff   // VPUNPCKHQDQ  XMM7,  XMM7, XMM15  /*  row4h = _mm_unpackhi_epi64(row4h,                           )          */
+    UNDIAGONALIZE
 
     // Reload digest
     MOVQ   in+24(FP),  SI     // SI: &in

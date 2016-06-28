@@ -53,7 +53,7 @@ func compressSSE(d *digest, p []uint8) {
 }
 
 func compress(d *digest, p []uint8) {
-	if sse {
+	if avx {
 		compressSSE(d, p)
 		return
 	}

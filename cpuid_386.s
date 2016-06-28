@@ -13,3 +13,10 @@ TEXT ·cpuid(SB), 7, $0
         MOVL DX, edx+16(FP)
         RET
 
+// func xgetbv(index uint32) (eax, edx uint32)
+TEXT ·xgetbv(SB), 7, $0
+	MOVL index+0(FP), CX
+	BYTE $0x0f; BYTE $0x01; BYTE $0xd0 // XGETBV
+	MOVL AX, eax+4(FP)
+	MOVL DX, edx+8(FP)
+	RET
