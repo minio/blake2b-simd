@@ -18,7 +18,9 @@ Benchmarks
 | blake2b-SIMD  | 1.59s |
 | blake2b       | 4.66s |
 
-Here the results after optimization.
+
+Example performance metrics were generated on Intel(R) Core(TM) i7-3520M CPU @ 2.90GHz - 2 physical cores, 4 logical cores running Ubuntu GNU/Linux with kernel version 4.4.0-22-generic.
+
 ```
 benchmark                old ns/op     new ns/op     delta
 BenchmarkHash64-4        742           411           -44.61%
@@ -36,3 +38,5 @@ BenchmarkWrite8K-4       3897.06      11383.41     2.92x
 BenchmarkWrite32K-4      977.48       2852.63      2.92x
 BenchmarkWrite128K-4     243.64       713.73       2.93x
 ```
+
+We can see `2-3x` improvement in performance over native Go under varying block sizes.
