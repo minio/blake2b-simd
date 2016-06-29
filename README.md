@@ -18,3 +18,21 @@ Benchmarks
 | blake2b-SIMD  | 1.59s |
 | blake2b       | 4.66s |
 
+Here the results after optimization.
+```
+benchmark                old ns/op     new ns/op     delta
+BenchmarkHash64-4        742           411           -44.61%
+BenchmarkHash128-4       681           346           -49.19%
+BenchmarkWrite1K-4       4239          1497          -64.69%
+BenchmarkWrite8K-4       33633         11514         -65.77%
+BenchmarkWrite32K-4      134091        45947         -65.73%
+BenchmarkWrite128K-4     537976        183643        -65.86%
+
+benchmark                old MB/s     new MB/s     speedup
+BenchmarkHash64-4        86.18        155.51       1.80x
+BenchmarkHash128-4       187.96       369.10       1.96x
+BenchmarkWrite1K-4       241.55       683.87       2.83x
+BenchmarkWrite8K-4       3897.06      11383.41     2.92x
+BenchmarkWrite32K-4      977.48       2852.63      2.92x
+BenchmarkWrite128K-4     243.64       713.73       2.93x
+```
