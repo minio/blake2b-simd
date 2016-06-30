@@ -148,8 +148,8 @@ TEXT ·blockAVXLoop(SB), 7, $0
     MOVQ   message+0(FP), DX  // DX: &p (message)
     MOVQ   message_len+8(FP), R8 // R8: len(message)
     SHRQ   $7, R8             // len(message) / 128
- 	CMPQ   R8, $0
- 	JEQ    complete
+    CMPQ   R8, $0
+    JEQ    complete
 
 loop:
     // Increment counter
@@ -235,7 +235,8 @@ noincr:                       //                       /* } */
     MOVOU  80(DX), X13        // X13 = m[10]+m[11]
     MOVOU  48(DX), X15        // X15 =  m[6]+ m[7]
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc   // VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
+                BYTE $0x08
 
     LOAD_SHUFFLE
 
@@ -250,7 +251,8 @@ noincr:                       //                       /* } */
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  32(DX), X13        // X13 =  m[4]+ m[5]
     MOVOU  80(DX), X14        // X14 = m[10]+m[11]
-    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xc4; BYTE $0x08 // VPALIGNR     XMM8, XMM12, XMM12, 0x8  /*  m[1],  m[0] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xc4   // VPALIGNR     XMM8, XMM12, XMM12, 0x8  /*  m[1],  m[0] */
+                BYTE $0x08
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xcd   // VPUNPCKHQDQ  XMM9, XMM14, XMM13  /* m[11], m[5] */
     MOVOU  16(DX), X12        // X12 =  m[2]+ m[3]
     MOVOU  48(DX), X13        // X13 =  m[6]+ m[7]
@@ -276,7 +278,8 @@ noincr:                       //                       /* } */
     MOVOU  80(DX), X13        // X13 = m[10]+m[11]
     MOVOU  96(DX), X14        // X14 = m[12]+m[13]
     MOVOU 112(DX), X15        // X15 = m[14]+m[15]
-    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xc5; BYTE $0x08// VPALIGNR     XMM8, XMM14, XMM13, 0x8  /* m[11],  m[12] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xc5   // VPALIGNR     XMM8, XMM14, XMM13, 0x8  /* m[11],  m[12] */
+                BYTE $0x08
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xcf   // VPUNPCKHQDQ  XMM9, XMM12, XMM15  /*  m[5], m[15] */
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  16(DX), X13        // X13 =  m[2]+ m[3]
@@ -306,7 +309,8 @@ noincr:                       //                       /* } */
     MOVOU  32(DX), X14        // X14 =  m[4]+ m[5]
     MOVOU 112(DX), X15        // X15 = m[14]+m[15]
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xd5   // VPUNPCKLQDQ XMM10, XMM15, XMM13  /* m[14], m[6] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM14, XMM12, 0x8  /*  m[1],  m[4] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdc   // VPALIGNR    XMM11, XMM14, XMM12, 0x8  /*  m[1],  m[4] */
+                BYTE $0x08
 
     LOAD_SHUFFLE
 
@@ -407,7 +411,8 @@ noincr:                       //                       /* } */
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  64(DX), X13        // X13 =  m[8]+ m[9]
     MOVOU  96(DX), X14        // X14 = m[12]+m[13]
-    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xd4; BYTE $0x08// VPALIGNR    XMM10, XMM14, XMM12, 0x8  /*  m[1], m[12] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xd4   // VPALIGNR    XMM10, XMM14, XMM12, 0x8  /*  m[1], m[12] */
+                BYTE $0x08
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xde   // VPUNPCKHQDQ XMM11, XMM14, XMM14  /*   ___, m[13] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xdb   // VPUNPCKLQDQ XMM11, XMM13, XMM11  /*  m[8],  ____ */
 
@@ -482,7 +487,8 @@ noincr:                       //                       /* } */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xcd   // VPUNPCKLQDQ  XMM9, XMM15, XMM13  /* m[14],  m[4] */
     MOVOU  80(DX), X12        // X12 = m[10]+m[11]
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ XMM10, XMM13, XMM15  /*  m[5], m[15] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xde; BYTE $0x08// VPALIGNR    XMM11, XMM12, XMM14, 0x8  /* m[13], m[10] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xde   // VPALIGNR    XMM11, XMM12, XMM14, 0x8  /* m[13], m[10] */
+                BYTE $0x08
 
     LOAD_SHUFFLE
 
@@ -499,7 +505,8 @@ noincr:                       //                       /* } */
     MOVOU  64(DX), X14        // X14 =  m[8]+ m[9]
     MOVOU  80(DX), X15        // X15 = m[10]+m[11]
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6c; BYTE $0xc5   // VPUNPCKLQDQ  XMM8, XMM12, XMM13  /*  m[0],  m[6] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xce; BYTE $0x08// VPALIGNR     XMM9, XMM14, XMM14, 0x8  /*  m[9],  m[8] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xce   // VPALIGNR     XMM9, XMM14, XMM14, 0x8  /*  m[9],  m[8] */
+                BYTE $0x08
     MOVOU  16(DX), X14        // X14 =  m[2]+ m[3]
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6d; BYTE $0xd6   // VPUNPCKHQDQ XMM10, XMM13, XMM14  /*  m[7],  m[3] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xdf   // VPUNPCKHQDQ XMM11, XMM15, XMM15  /*   ___, m[11] */
@@ -529,7 +536,8 @@ noincr:                       //                       /* } */
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  64(DX), X13        // X13 =  m[8]+ m[9]
     MOVOU  80(DX), X14        // X14 = m[10]+m[11]
-    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd6; BYTE $0x08// VPALIGNR    XMM10, XMM15, XMM14, 0x8  /* m[11], m[14] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd6   // VPALIGNR    XMM10, XMM15, XMM14, 0x8  /* m[11], m[14] */
+                BYTE $0x08
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xdd   // VPUNPCKHQDQ XMM11, XMM12, XMM13  /*  m[1],  m[9] */
 
     LOAD_SHUFFLE
@@ -573,11 +581,13 @@ noincr:                       //                       /* } */
     MOVOU  80(DX), X14        // X14 = m[10]+m[11]
     MOVOU 112(DX), X15        // X15 = m[14]+m[15]
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xc7   // VPUNPCKLQDQ  XMM8, XMM13, XMM15  /*  m[6], m[14] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xce; BYTE $0x08// VPALIGNR     XMM9, XMM12, XMM14, 0x8  /* m[11],  m[0] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xce   // VPALIGNR     XMM9, XMM12, XMM14, 0x8  /* m[11],  m[0] */
+                BYTE $0x08
     MOVOU  16(DX), X13        // X13 =  m[2]+ m[3]
     MOVOU  64(DX), X14        // X14 =  m[8]+ m[9]
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xd6   // VPUNPCKHQDQ XMM10, XMM15, XMM14  /* m[15],  m[9] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdd; BYTE $0x08// VPALIGNR    XMM11, XMM14, XMM13, 0x8  /*  m[3],  m[8] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xdd   // VPALIGNR    XMM11, XMM14, XMM13, 0x8  /*  m[3],  m[8] */
+                BYTE $0x08
 
     LOAD_SHUFFLE
 
@@ -595,7 +605,8 @@ noincr:                       //                       /* } */
     MOVOU  96(DX), X15        // X15 = m[12]+m[13]
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xc7   // VPUNPCKHQDQ  XMM8, XMM15, XMM15  /*   ___, m[13] */
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6c; BYTE $0xc0   // VPUNPCKLQDQ  XMM8, XMM15,  XMM8  /* m[12],  ____ */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xcc; BYTE $0x08// VPALIGNR     XMM9, XMM14, XMM12, 0x8  /*  m[1], m[10] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x09; BYTE $0x0f; BYTE $0xcc   // VPALIGNR     XMM9, XMM14, XMM12, 0x8  /*  m[1], m[10] */
+                BYTE $0x08
     MOVOU  32(DX), X12        // X12 =  m[4]+ m[5]
     MOVOU  48(DX), X15        // X15 =  m[6]+ m[7]
     BYTE $0xc4; BYTE $0x41; BYTE $0x01; BYTE $0x6d; BYTE $0xd7   // VPUNPCKHQDQ XMM10, XMM15, XMM15  /*   ___,  m[7] */
@@ -647,7 +658,8 @@ noincr:                       //                       /* } */
     BYTE $0xc4; BYTE $0x41; BYTE $0x19; BYTE $0x6d; BYTE $0xce   // VPUNPCKHQDQ  XMM9, XMM12, XMM14  /*  m[3], m[13] */
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  80(DX), X13        // X13 = m[10]+m[11]
-    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd5; BYTE $0x08// VPALIGNR    XMM10, XMM15, XMM13, 0x8  /* m[11], m[14] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xd5   // VPALIGNR    XMM10, XMM15, XMM13, 0x8  /* m[11], m[14] */
+                BYTE $0x08
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6c; BYTE $0xdc   // VPUNPCKLQDQ XMM11, XMM14, XMM12  /* m[12],  m[0] */
 
     LOAD_SHUFFLE
@@ -715,7 +727,8 @@ noincr:                       //                       /* } */
     MOVOU  80(DX), X13        // X13 = m[10]+m[11]
     MOVOU  48(DX), X15        // X15 =  m[6]+ m[7]
     BYTE $0xc4; BYTE $0x41; BYTE $0x11; BYTE $0x6c; BYTE $0xd6   // VPUNPCKLQDQ XMM10, XMM13, XMM14  /* m[10],  m[8] */
-    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc; BYTE $0x08// VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x01; BYTE $0x0f; BYTE $0xdc   // VPALIGNR    XMM11, XMM15, XMM12, 0x8  /* m[15],  m[6] */
+                BYTE $0x08
 
     LOAD_SHUFFLE
 
@@ -730,7 +743,8 @@ noincr:                       //                       /* } */
     MOVOU   0(DX), X12        // X12 =  m[0]+ m[1]
     MOVOU  32(DX), X13        // X13 =  m[4]+ m[5]
     MOVOU  80(DX), X14        // X14 = m[10]+m[11]
-    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xc4; BYTE $0x08 // VPALIGNR     XMM8, XMM12, XMM12, 0x8  /*  m[1],  m[0] */
+    BYTE $0xc4; BYTE $0x43; BYTE $0x19; BYTE $0x0f; BYTE $0xc4   // VPALIGNR     XMM8, XMM12, XMM12, 0x8  /*  m[1],  m[0] */
+                BYTE $0x08
     BYTE $0xc4; BYTE $0x41; BYTE $0x09; BYTE $0x6d; BYTE $0xcd   // VPUNPCKHQDQ  XMM9, XMM14, XMM13  /* m[11], m[5] */
     MOVOU  16(DX), X12        // X12 =  m[2]+ m[3]
     MOVOU  48(DX), X13        // X13 =  m[6]+ m[7]
@@ -770,9 +784,9 @@ noincr:                       //                       /* } */
     MOVOU  X3, 48(SI)         // out[6]+out[7] = X3
 
     // Increment message pointer and check if there's more to do
-	ADDQ   $128, DX           // message += 128
-	SUBQ   $1, R8
-	JNZ    loop
+    ADDQ   $128, DX           // message += 128
+    SUBQ   $1, R8
+    JNZ    loop
 
 complete:
     RET
