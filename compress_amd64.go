@@ -40,9 +40,10 @@ func compressAVX(d *digest, p []uint8) {
 }
 
 func compress(d *digest, p []uint8) {
-	// Verifies if AVX is available, use optimized code path.
+	// Verifies if AVX2 or AVX is available, use optimized code path.
 	if avx2 {
 		compressAVX2(d, p)
+		return
 	} else if avx {
 		compressAVX(d, p)
 		return
