@@ -19,24 +19,25 @@ Benchmarks
 | blake2b       | 4.66s |
 
 
-Example performance metrics were generated on Intel(R) Core(TM) i7-3520M CPU @ 2.90GHz - 2 physical cores, 4 logical cores running Ubuntu GNU/Linux with kernel version 4.4.0-22-generic.
+Example performance metrics were generated on  Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz - 6 physical cores, 12 logical cores running Ubuntu GNU/Linux with kernel version 4.4.0-24-generic (vanilla with no optimizations).
 
 ```
+$ benchcmp old.txt new.txt
 benchmark                old ns/op     new ns/op     delta
-BenchmarkHash64-4        742           411           -44.61%
-BenchmarkHash128-4       681           346           -49.19%
-BenchmarkWrite1K-4       4239          1497          -64.69%
-BenchmarkWrite8K-4       33633         11514         -65.77%
-BenchmarkWrite32K-4      134091        45947         -65.73%
-BenchmarkWrite128K-4     537976        183643        -65.86%
+BenchmarkHash64-12       1481          849           -42.67%
+BenchmarkHash128-12      1428          746           -47.76%
+BenchmarkHash1K-12       6379          2227          -65.09%
+BenchmarkHash8K-12       37219         11714         -68.53%
+BenchmarkHash32K-12      140716        35935         -74.46%
+BenchmarkHash128K-12     561656        142634        -74.60%
 
 benchmark                old MB/s     new MB/s     speedup
-BenchmarkHash64-4        86.18        155.51       1.80x
-BenchmarkHash128-4       187.96       369.10       1.96x
-BenchmarkWrite1K-4       241.55       683.87       2.83x
-BenchmarkWrite8K-4       3897.06      11383.41     2.92x
-BenchmarkWrite32K-4      977.48       2852.63      2.92x
-BenchmarkWrite128K-4     243.64       713.73       2.93x
+BenchmarkHash64-12       43.20        75.37        1.74x
+BenchmarkHash128-12      89.64        171.35       1.91x
+BenchmarkHash1K-12       160.52       459.69       2.86x
+BenchmarkHash8K-12       220.10       699.32       3.18x
+BenchmarkHash32K-12      232.87       911.85       3.92x
+BenchmarkHash128K-12     233.37       918.93       3.94x
 ```
 
 We can see `2-3x` improvement in performance over native Go under varying block sizes.
