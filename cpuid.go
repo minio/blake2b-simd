@@ -40,8 +40,8 @@ func haveAVX() bool {
 
 // haveAVX2 returns true if when there is AVX2 support
 func haveAVX2() bool {
-
 	mfi, _, _, _ := cpuid(0)
+
 	// Check AVX2, AVX2 requires OS support, but BMI1/2 don't.
 	if mfi >= 7 && haveAVX() {
 		_, ebx, _, _ := cpuidex(7, 0)
