@@ -601,50 +601,41 @@ var goldenKeyed = []string{
 var bench = New512()
 var buf = make([]byte, 128*1024)
 
+func benchmarkSize(b *testing.B, size int) {
+	b.SetBytes(int64(size))
+	for i := 0; i < b.N; i++ {
+		bench.Reset()
+		bench.Write(buf[:size])
+		bench.Sum(nil)
+	}
+}
+
 // Benchmark writes of 64 bytes.
 func BenchmarkHash64(b *testing.B) {
-	b.SetBytes(64)
-	for i := 0; i < b.N; i++ {
-		Sum512(buf[:64])
-	}
+	benchmarkSize(b, 64)
 }
 
 // Benchmark writes of 128 bytes.
 func BenchmarkHash128(b *testing.B) {
-	b.SetBytes(128)
-	for i := 0; i < b.N; i++ {
-		Sum512(buf[:128])
-	}
+	benchmarkSize(b, 128)
 }
 
 // Benchmark writes of 1KiB bytes.
-func BenchmarkWrite1K(b *testing.B) {
-	b.SetBytes(1024)
-	for i := 0; i < b.N; i++ {
-		bench.Write(buf[:1024])
-	}
+func BenchmarkHash1K(b *testing.B) {
+	benchmarkSize(b, 1024)
 }
 
 // Benchmark writes of 8KiB bytes.
-func BenchmarkWrite8K(b *testing.B) {
-	b.SetBytes(int64(len(buf)))
-	for i := 0; i < b.N; i++ {
-		bench.Write(buf[:8192])
-	}
+func BenchmarkHash8K(b *testing.B) {
+	benchmarkSize(b, 8*1024)
 }
 
 // Benchmark writes of 32KiB bytes.
-func BenchmarkWrite32K(b *testing.B) {
-	b.SetBytes(int64(len(buf)))
-	for i := 0; i < b.N; i++ {
-		bench.Write(buf[:32*1024])
-	}
+func BenchmarkHash32K(b *testing.B) {
+	benchmarkSize(b, 32*1024)
 }
 
 // Benchmark writes of 128KiB bytes.
-func BenchmarkWrite128K(b *testing.B) {
-	b.SetBytes(int64(len(buf)))
-	for i := 0; i < b.N; i++ {
-		bench.Write(buf)
-	}
+func BenchmarkHash128K(b *testing.B) {
+	benchmarkSize(b, 128*1024)
 }
