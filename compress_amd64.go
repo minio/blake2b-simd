@@ -22,6 +22,8 @@ func compress(d *digest, p []uint8) {
 		compressAVX2(d, p)
 	} else if avx {
 		compressAVX(d, p)
+	} else if ssse3 {
+		compressSSE(d, p)
 	} else {
 		compressGeneric(d, p)
 	}

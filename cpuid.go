@@ -24,8 +24,9 @@ func xgetbv(index uint32) (eax, edx uint32)
 // True when SIMD instructions are available.
 var avx2 = haveAVX2()
 var avx = haveAVX()
+var ssse3 = haveSSSE3()
 
-// haveAVX returns true if when there is AVX support
+// haveAVX returns true when there is AVX support
 func haveAVX() bool {
 	_, _, c, _ := cpuid(1)
 
@@ -38,7 +39,7 @@ func haveAVX() bool {
 	return false
 }
 
-// haveAVX2 returns true if when there is AVX2 support
+// haveAVX2 returns true when there is AVX2 support
 func haveAVX2() bool {
 	mfi, _, _, _ := cpuid(0)
 
@@ -48,4 +49,12 @@ func haveAVX2() bool {
 		return (ebx & 0x00000020) != 0
 	}
 	return false
+}
+
+// haveSSSE3 returns true when there is SSSE3 support
+func haveSSSE3() bool {
+
+	_, _, c, _ := cpuid(1)
+
+	return (c & 0x00000200) != 0
 }
