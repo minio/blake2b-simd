@@ -80,12 +80,14 @@ BenchmarkHash128K-12     233.37       918.93       3.94x
 
 ### AVX2: Comparison to other hashing techniques
 
+```
 $ go test -bench=Comparison
 BenchmarkComparisonMD5-12    	    1000	   1726121 ns/op	 607.48 MB/s
 BenchmarkComparisonSHA1-12   	     500	   2005164 ns/op	 522.94 MB/s
 BenchmarkComparisonSHA256-12 	     300	   5531036 ns/op	 189.58 MB/s
 BenchmarkComparisonSHA512-12 	     500	   3423030 ns/op	 306.33 MB/s
 BenchmarkComparisonBlake2B-12	    1000	   1232690 ns/op	 850.64 MB/s
+```
 
 Benchmarks below were generated on a MacBook Pro with a 2.7 GHz Intel Core i7.
 
