@@ -27,11 +27,11 @@ import (
 
 func benchmarkHash(b *testing.B, hash func() hash.Hash) {
 	b.SetBytes(1024 * 1024)
-	data := make([]byte, 1024)
+	var data [1024]byte
 	for i := 0; i < b.N; i++ {
 		h := hash()
 		for j := 0; j < 1024; j++ {
-			h.Write(data)
+			h.Write(data[:])
 		}
 		h.Sum(nil)
 	}
@@ -59,7 +59,7 @@ func BenchmarkComparisonBlake2B(b *testing.B) {
 
 // Benchmark blake2b implementation.
 var bench = New512()
-var buf = make([]byte, 128*1024)
+var buf [128 * 1024]byte
 
 func benchmarkSize(b *testing.B, size int) {
 	b.SetBytes(int64(size))
