@@ -43,6 +43,27 @@ func TestSum(t *testing.T) {
 	}
 }
 
+// TestNativeSum - tests and validates golden set of values against
+// pre-defined set of inputs and matches blake2b output.
+func TestNativeSum(t *testing.T) {
+	buf := make([]byte, len(golden))
+	for i := range buf {
+		buf[i] = byte(i)
+	}
+	h := NewNative512()
+	for i, v := range golden {
+		if v != fmt.Sprintf("%x", Sum512(buf[:i])) {
+			t.Errorf("%d: Sum512(): \nexpected %s\ngot      %x", i, v, Sum512(buf[:i]))
+		}
+		h.Reset()
+		h.Write(buf[:i])
+		sum := h.Sum(nil)
+		if fmt.Sprintf("%x", sum) != v {
+			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum)
+		}
+	}
+}
+
 func TestSum256(t *testing.T) {
 	// Simple one-hash test.
 	in := "The cryptographic hash function BLAKE2 is an improved version of the SHA-3 finalist BLAKE"

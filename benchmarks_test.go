@@ -57,6 +57,31 @@ func BenchmarkComparisonBlake2B(b *testing.B) {
 	benchmarkHash(b, New512)
 }
 
+//replicate what the others are doing, just don't use interfaces
+func BenchmarkComparisonBlake2BNative(b *testing.B) {
+	b.SetBytes(1024 * 1024)
+	var data [1024]byte
+	for i := 0; i < b.N; i++ {
+		h := NewNative512()
+		for j := 0; j < 1024; j++ {
+			h.Write(data[:])
+		}
+		h.Sum(nil)
+	}
+}
+
+// Benchmark blake2b implementation.
+var benchNative = NewNative512()
+
+func benchmarkNativeSize(b *testing.B, size int) {
+	b.SetBytes(int64(size))
+	for i := 0; i < b.N; i++ {
+		benchNative.Reset()
+		benchNative.Write(buf[:size])
+		benchNative.Sum(nil)
+	}
+}
+
 // Benchmark blake2b implementation.
 var bench = New512()
 var buf [128 * 1024]byte
@@ -75,9 +100,19 @@ func BenchmarkSize64(b *testing.B) {
 	benchmarkSize(b, 64)
 }
 
+// Benchmark writes of 64 bytes.
+func BenchmarkSize64Native(b *testing.B) {
+	benchmarkNativeSize(b, 64)
+}
+
 // Benchmark writes of 128 bytes.
 func BenchmarkSize128(b *testing.B) {
 	benchmarkSize(b, 128)
+}
+
+// Benchmark writes of 128 bytes.
+func BenchmarkSize128Native(b *testing.B) {
+	benchmarkNativeSize(b, 128)
 }
 
 // Benchmark writes of 1KiB bytes.
@@ -85,9 +120,19 @@ func BenchmarkSize1K(b *testing.B) {
 	benchmarkSize(b, 1024)
 }
 
+// Benchmark writes of 1KiB bytes.
+func BenchmarkSize1KNative(b *testing.B) {
+	benchmarkNativeSize(b, 1024)
+}
+
 // Benchmark writes of 8KiB bytes.
 func BenchmarkSize8K(b *testing.B) {
 	benchmarkSize(b, 8*1024)
+}
+
+// Benchmark writes of 8KiB bytes.
+func BenchmarkSize8KNative(b *testing.B) {
+	benchmarkNativeSize(b, 8*1024)
 }
 
 // Benchmark writes of 32KiB bytes.
@@ -95,7 +140,17 @@ func BenchmarkSize32K(b *testing.B) {
 	benchmarkSize(b, 32*1024)
 }
 
+// Benchmark writes of 32KiB bytes.
+func BenchmarkSize32KNative(b *testing.B) {
+	benchmarkNativeSize(b, 32*1024)
+}
+
 // Benchmark writes of 128KiB bytes.
 func BenchmarkSize128K(b *testing.B) {
 	benchmarkSize(b, 128*1024)
+}
+
+// Benchmark writes of 128KiB bytes.
+func BenchmarkSize128KNative(b *testing.B) {
+	benchmarkNativeSize(b, 128*1024)
 }

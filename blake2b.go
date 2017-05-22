@@ -36,6 +36,10 @@ type digest struct {
 	isLastNode bool            // indicates processing of the last node in tree hashing
 }
 
+type Digest struct {
+	digest
+}
+
 // Initialization values.
 var iv = [8]uint64{
 	0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
@@ -168,6 +172,19 @@ func New512() hash.Hash {
 	d := new(digest)
 	d.initialize(defaultConfig)
 	return d
+}
+
+//NewNative512 returns the exported Digest type
+//just a hack job to avoid using interfaces
+//And so we can get the the static type [64]byte back on Sum
+func NewNative512() *Digest {
+	d := new(Digest)
+	d.initialize(defaultConfig)
+	return d
+}
+
+func (d *Digest) Sum(in []byte) [64]byte {
+	return d.checkSum()
 }
 
 // New256 returns a new hash.Hash computing the BLAKE2b 32-byte checksum.
