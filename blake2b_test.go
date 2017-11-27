@@ -17,7 +17,11 @@
 package blake2b
 
 import (
+	"bytes"
+	"encoding"
 	"fmt"
+	"hash"
+	"io"
 	"testing"
 )
 
@@ -75,6 +79,127 @@ func TestKeyedSum(t *testing.T) {
 			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum)
 		}
 
+	}
+}
+
+func TestGoldenMarshal(t *testing.T) {
+	tests := []struct {
+		name      string
+		newHash   func() hash.Hash
+		gold      []string
+		halfState []string
+	}{
+		{"256", New256, golden, make([]string, len(golden))},
+		{"512", New512, golden, make([]string, len(golden))},
+		{"256", New256, goldenKeyed, make([]string, len(goldenKeyed))},
+		{"512", New512, goldenKeyed, make([]string, len(goldenKeyed))},
+	}
+
+	for _, tt := range tests {
+		for i, g := range tt.gold {
+			h := tt.newHash()
+			h2 := tt.newHash()
+
+			io.WriteString(h, g[:len(g)/2])
+
+			state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
+			if err != nil {
+				t.Errorf("could not marshal: %v", err)
+				continue
+			}
+
+			tt.halfState[i] = string(state)
+
+			if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
+				t.Errorf("could not unmarshal: %v", err)
+				continue
+			}
+
+			io.WriteString(h, g[len(g)/2:])
+			io.WriteString(h2, g[len(g)/2:])
+
+			if actual, actual2 := h.Sum(nil), h2.Sum(nil); !bytes.Equal(actual, actual2) {
+				t.Errorf("sha%s(%q) = 0x%x != marshaled 0x%x", tt.name, g, actual, actual2)
+			}
+		}
+	}
+
+	for _, tt := range tests {
+		for i, g := range tt.gold {
+			h := tt.newHash()
+			h2 := tt.newHash()
+
+			io.WriteString(h, g)
+
+			if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary([]byte(tt.halfState[i])); err != nil {
+				t.Errorf("could not unmarshal: %v", err)
+				continue
+			}
+			io.WriteString(h2, g[len(g)/2:])
+
+			if actual, actual2 := h.Sum(nil), h2.Sum(nil); !bytes.Equal(actual, actual2) {
+				t.Errorf("sha%s(%q) = 0x%x != marshaled 0x%x", tt.name, g, actual, actual2)
+			}
+		}
+	}
+
+}
+
+func TestGoldenKeyedMarshal(t *testing.T) {
+	buf := make([]byte, len(goldenKeyed))
+	for i := range buf {
+		buf[i] = byte(i)
+	}
+	h := NewMAC(64, buf[:64])
+	for i, v := range goldenKeyed {
+		h.Reset()
+		h2 := New512()
+		h2.Write([]byte("howdy"))
+		h3 := NewMAC(48, buf[32:48])
+		h3.Write(buf[:])
+		h4, err := New(&Config{Size: 32, Key: []byte("bananna"), Person: []byte("zippy"), Salt: []byte("mrpretzel"), Tree: &Tree{NodeDepth: 1, MaxDepth: 4, InnerHashSize: 2}})
+		if err != nil {
+			t.Errorf("could not create digest: %v", err)
+			continue
+		}
+
+		h.Write(buf[:i])
+
+		state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
+		if err != nil {
+			t.Errorf("could not marshal: %v", err)
+			continue
+		}
+
+		if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
+			t.Errorf("could not unmarshal: %v", err)
+			continue
+		}
+		if err := h3.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
+			t.Errorf("could not unmarshal: %v", err)
+			continue
+		}
+		if err := h4.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
+			t.Errorf("could not unmarshal: %v", err)
+			continue
+		}
+
+		sum := h.Sum(nil)
+		sum2 := h2.Sum(nil)
+		sum3 := h3.Sum(nil)
+		sum4 := h4.Sum(nil)
+		if fmt.Sprintf("%x", sum) != v {
+			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum)
+		}
+		if fmt.Sprintf("%x", sum2) != v {
+			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum2)
+		}
+		if fmt.Sprintf("%x", sum3) != v {
+			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum3)
+		}
+		if fmt.Sprintf("%x", sum4) != v {
+			t.Errorf("%d:\nexpected %s\ngot      %x", i, v, sum4)
+		}
 	}
 }
 

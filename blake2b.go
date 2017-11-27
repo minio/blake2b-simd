@@ -299,3 +299,123 @@ func Sum256(data []byte) (out [32]byte) {
 	copy(out[:], sum[:32])
 	return
 }
+
+const (
+	magic         = "b2b\x01"
+	marshaledSize = len(magic) + (8 * 8) + (2 * 8) + (2 * 8) + BlockSize + 4 + (8 * 8) + BlockSize + 1 + 1 + 1
+)
+
+func (d *digest) MarshalBinary() ([]byte, error) {
+	b := make([]byte, 0, marshaledSize)
+	b = append(b, magic...)
+	// size 8 * 8
+	for _, v := range d.h {
+		b = appendUint64(b, v)
+	}
+	// size 2 * 8
+	for _, v := range d.t {
+		b = appendUint64(b, v)
+	}
+	// size 2 * 8
+	for _, v := range d.f {
+		b = appendUint64(b, v)
+	}
+	// size BlockSize
+	b = append(b, d.x[:]...)
+	// size 4
+	b = appendUint32(b, uint32(d.nx))
+	// size 8 * 8
+	for _, v := range d.ih {
+		b = appendUint64(b, v)
+	}
+	// size BlockSize
+	b = append(b, d.paddedKey[:]...)
+	// size 1
+	b = appendBool(b, d.isKeyed)
+	// size 1
+	b = append(b, d.size)
+	// size 1
+	b = appendBool(b, d.isLastNode)
+	return b, nil
+}
+
+func (d *digest) UnmarshalBinary(b []byte) error {
+	if len(b) < len(magic) || string(b[:len(magic)]) != magic {
+		return errors.New("hash/blake2b: invalid hash state identifier")
+	}
+	if len(b) != marshaledSize {
+		return errors.New("hash/blake2b: invalid hash state size")
+	}
+	b = b[len(magic):]
+	for i := 0; i < 8; i++ {
+		b, d.h[i] = consumeUint64(b)
+	}
+	for i := 0; i < 2; i++ {
+		b, d.t[i] = consumeUint64(b)
+	}
+	for i := 0; i < 2; i++ {
+		b, d.f[i] = consumeUint64(b)
+	}
+	b = b[copy(d.x[:], b):]
+	var nx uint32
+	b, nx = consumeUint32(b)
+	d.nx = int(nx)
+	for i := 0; i < 8; i++ {
+		b, d.ih[i] = consumeUint64(b)
+	}
+	b = b[copy(d.paddedKey[:], b):]
+	b, d.isKeyed = consumeBool(b)
+	d.size, b = b[0], b[1:]
+	b, d.isLastNode = consumeBool(b)
+	return nil
+}
+
+func appendBool(b []byte, x bool) []byte {
+	var v int8
+	if x {
+		v = 1
+	}
+	return append(b, byte(v))
+}
+
+func consumeBool(b []byte) ([]byte, bool) {
+	result := !(b[0] == 0)
+	return b[1:], result
+}
+
+func appendUint64(b []byte, x uint64) []byte {
+	a := [8]byte{
+		byte(x >> 56),
+		byte(x >> 48),
+		byte(x >> 40),
+		byte(x >> 32),
+		byte(x >> 24),
+		byte(x >> 16),
+		byte(x >> 8),
+		byte(x),
+	}
+	return append(b, a[:]...)
+}
+
+func appendUint32(b []byte, x uint32) []byte {
+	a := [4]byte{
+		byte(x >> 24),
+		byte(x >> 16),
+		byte(x >> 8),
+		byte(x),
+	}
+	return append(b, a[:]...)
+}
+
+func consumeUint64(b []byte) ([]byte, uint64) {
+	_ = b[7]
+	x := uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |
+		uint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56
+	return b[8:], x
+}
+
+func consumeUint32(b []byte) ([]byte, uint32) {
+	_ = b[3]
+	x := uint32(b[3]) | uint32(b[2])<<8 | uint32(b[1])<<16 | uint32(b[0])<<24
+	return b[4:], x
+}
